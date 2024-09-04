@@ -20,24 +20,24 @@ function(record) {
      */
     function pageInit(scriptContext) {
 
-        try
-        {
-            let currentRecord=scriptContext.currentRecord;
-            let couponCheckbox=currentRecord.getValue({fieldId: 'custentity_jj_cust_apply_coupon'});
-            validateCheckBox(currentRecord, couponCheckbox);
-            log.debug({
-                title: 'Page Loaded',
-                details: 'Page Loaded Successfully'
-            })
+        let strMessage = 'New Update';
+        debugger;
+        let message = 'Page Init Triggered';
+        log.debug(message);
+        console.log(message);
+        customFunction(strMessage)
+        let curRecord = scriptContext.currentRecord;
+        curRecord.setValue({
+            fieldId: 'memo',
+            value: strMessage 
+        }); 
 
-        }
-        catch(e)
+        function customFunction(strMessage)
         {
-            log.debug({
-                title: 'Error in Loading Page',
-                details: e.message
-            });
-        }        
+            let customMessage = 'custom function() called: '+strMessage;
+            console.log(customMessage);
+        }
+
     }
 
     /**
@@ -53,27 +53,6 @@ function(record) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
-        try
-        {
-            let currentRecord=scriptContext.currentRecord;
-            let fieldId = scriptContext.fieldId;
-            if(fieldId == 'custentity_jj_cust_apply_coupon')
-            {
-                let applyCoupon=currentRecord.getValue({fieldId: 'custentity_jj_cust_apply_coupon'});
-                validateCheckBox(currentRecord, applyCoupon);
-                log.debug({
-                    title: 'Field Changed',
-                    details: 'Field Change Detected'
-                })
-            }
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error in Field Change',
-                details: e.message
-            })
-        }
 
     }
 
@@ -190,62 +169,12 @@ function(record) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        try
-        {
-            let currentRecord=scriptContext.currentRecord;
-            let applyCoupon=currentRecord.getValue({fieldId:'custentity_jj_cust_apply_coupon'});
-            let couponField=currentRecord.getValue({fieldId:'custentity_jj_cust_coupon_field'});
 
-            if(applyCoupon && (couponField.length<5))
-            {
-                alert('Invalid Coupon/Coupon Code not Entered');
-                return false;
-            }
-            log.debug({
-                title: 'Validated the Field',
-                details: 'Validated the Coupon Code Field'
-            })
-
-            log.debug({
-                title: 'Saved the Record',
-                details: 'Saved the record Successfully'
-            })
-            return true;
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error in Saving Record',
-                details: e.message
-            });
-            return false
-        }
     }
-
-    function validateCheckBox(cRecord, checkbox)
-        {
-            let coupunField=cRecord.getField({fieldId: 'custentity_jj_cust_coupon_field'});
-            if(checkbox)
-            {
-                coupunField.isDisabled = false;
-                console.log('Coupon Code field enabled'); 
-            }
-
-            else if(!checkbox)
-            {
-                coupunField.isDisabled = true;
-                console.log('Coupon Code field disabled');
-                cRecord.setValue({
-                    fieldId:'custentity_jj_cust_coupon_field',
-                    value: ''
-                });
-                console.log('Coupon Code field cleared');
-            }
-        }
 
     return {
         pageInit: pageInit,
-        fieldChanged: fieldChanged,
+        // fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
@@ -253,7 +182,7 @@ function(record) {
         // validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-        saveRecord: saveRecord
+        // saveRecord: saveRecord
     };
     
 });

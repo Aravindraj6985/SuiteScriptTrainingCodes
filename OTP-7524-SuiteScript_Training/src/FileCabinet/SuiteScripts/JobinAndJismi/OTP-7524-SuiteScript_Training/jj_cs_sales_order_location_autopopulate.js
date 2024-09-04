@@ -20,24 +20,6 @@ function(record) {
      */
     function pageInit(scriptContext) {
 
-        try
-        {
-            let currentRecord=scriptContext.currentRecord;
-            let couponCheckbox=currentRecord.getValue({fieldId: 'custentity_jj_cust_apply_coupon'});
-            validateCheckBox(currentRecord, couponCheckbox);
-            log.debug({
-                title: 'Page Loaded',
-                details: 'Page Loaded Successfully'
-            })
-
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error in Loading Page',
-                details: e.message
-            });
-        }        
     }
 
     /**
@@ -52,27 +34,79 @@ function(record) {
      *
      * @since 2015.2
      */
+    
     function fieldChanged(scriptContext) {
+        debugger;
         try
         {
-            let currentRecord=scriptContext.currentRecord;
-            let fieldId = scriptContext.fieldId;
-            if(fieldId == 'custentity_jj_cust_apply_coupon')
+            if(fieldId === 'location')
             {
-                let applyCoupon=currentRecord.getValue({fieldId: 'custentity_jj_cust_apply_coupon'});
-                validateCheckBox(currentRecord, applyCoupon);
+                let cRecord = scriptContext.currentRecord;
+                let bodyLocation=cRecord.getValue({fieldId: 'location'});
+                console.log('Body Location: '+bodyLocation);
+
                 log.debug({
-                    title: 'Field Changed',
-                    details: 'Field Change Detected'
-                })
+                    title: 'Body Location Fetched',
+                    details: 'Location From Body Fetched: '+bodyLocation
+                });
+
+                let lineCount=cRecord.getLineCount({sublistId: 'item'});
+                console.log('Line Count: '+lineCount);
+
+                log.debug({
+                    title: 'Line Count',
+                    details: 'Number of lines: '+lineCount
+                });
+
+                for(let i=0; i<lineCount; i++)
+                {
+                    cRecord.selectLine('item', i );
+                    cRecord.setCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'location',
+                        value: bodyLocation
+                    });
+
+                    console.log('Line location set to '+bodyLocation);
+                    log.debug({
+                        title: 'Line Location Set',
+                        details: 'Line location set is '+bodyLocation
+                    });
+                    cRecord.commitLine({sublistId: 'item'});
+                    console.log('Commited line');
+                }
+
             }
+            
+            // let fieldId = scriptContext.fieldId;
+            // let subFieldId = scriptContext.sublistId;
+            // if(fieldId === 'location')
+            // {
+                
+            //     log.debug({
+            //         title: 'Body Location Fetched',
+            //         details: 'Location From Body Fetched: '+location
+            //     });
+            //     console.log('Body Location: '+location);
+            //}
+
+            // if(subFieldId === 'item')
+            // {
+            //     let itemLocation=cRecord.getValue({fieldId: 'item.location'})
+            //     log.debug({
+            //         title: 'Line Location Fetched',
+            //         details: 'Location From Line Fetched: '+itemLocation
+            //     });
+            //     console.log('line Location: '+itemLocation);
+            // }
+                
         }
         catch(e)
         {
             log.debug({
-                title: 'Error in Field Change',
+                title: 'Error in Field Validation',
                 details: e.message
-            })
+            });
         }
 
     }
@@ -190,62 +224,12 @@ function(record) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        try
-        {
-            let currentRecord=scriptContext.currentRecord;
-            let applyCoupon=currentRecord.getValue({fieldId:'custentity_jj_cust_apply_coupon'});
-            let couponField=currentRecord.getValue({fieldId:'custentity_jj_cust_coupon_field'});
 
-            if(applyCoupon && (couponField.length<5))
-            {
-                alert('Invalid Coupon/Coupon Code not Entered');
-                return false;
-            }
-            log.debug({
-                title: 'Validated the Field',
-                details: 'Validated the Coupon Code Field'
-            })
-
-            log.debug({
-                title: 'Saved the Record',
-                details: 'Saved the record Successfully'
-            })
-            return true;
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error in Saving Record',
-                details: e.message
-            });
-            return false
-        }
     }
 
-    function validateCheckBox(cRecord, checkbox)
-        {
-            let coupunField=cRecord.getField({fieldId: 'custentity_jj_cust_coupon_field'});
-            if(checkbox)
-            {
-                coupunField.isDisabled = false;
-                console.log('Coupon Code field enabled'); 
-            }
-
-            else if(!checkbox)
-            {
-                coupunField.isDisabled = true;
-                console.log('Coupon Code field disabled');
-                cRecord.setValue({
-                    fieldId:'custentity_jj_cust_coupon_field',
-                    value: ''
-                });
-                console.log('Coupon Code field cleared');
-            }
-        }
-
     return {
-        pageInit: pageInit,
-        fieldChanged: fieldChanged,
+        // pageInit: pageInit,
+         fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
@@ -253,7 +237,7 @@ function(record) {
         // validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-        saveRecord: saveRecord
+        // saveRecord: saveRecord
     };
     
 });

@@ -19,25 +19,7 @@ function(record) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-
-        try
-        {
-            let currentRecord=scriptContext.currentRecord;
-            let couponCheckbox=currentRecord.getValue({fieldId: 'custentity_jj_cust_apply_coupon'});
-            validateCheckBox(currentRecord, couponCheckbox);
-            log.debug({
-                title: 'Page Loaded',
-                details: 'Page Loaded Successfully'
-            })
-
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error in Loading Page',
-                details: e.message
-            });
-        }        
+  
     }
 
     /**
@@ -53,18 +35,20 @@ function(record) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
+
+        debugger;
         try
         {
-            let currentRecord=scriptContext.currentRecord;
+            let cRecord = scriptContext.currentRecord;
             let fieldId = scriptContext.fieldId;
-            if(fieldId == 'custentity_jj_cust_apply_coupon')
+            if(fieldId === 'custbody_jj_custom_so_checkbox')
             {
-                let applyCoupon=currentRecord.getValue({fieldId: 'custentity_jj_cust_apply_coupon'});
-                validateCheckBox(currentRecord, applyCoupon);
+                let checkbox=cRecord.getValue({fieldId: 'custbody_jj_custom_so_checkbox'});
+                checkboxValidation(cRecord, checkbox);
                 log.debug({
                     title: 'Field Changed',
                     details: 'Field Change Detected'
-                })
+                });
             }
         }
         catch(e)
@@ -72,8 +56,8 @@ function(record) {
             log.debug({
                 title: 'Error in Field Change',
                 details: e.message
-            })
-        }
+            });
+        }    
 
     }
 
@@ -190,62 +174,45 @@ function(record) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        try
-        {
-            let currentRecord=scriptContext.currentRecord;
-            let applyCoupon=currentRecord.getValue({fieldId:'custentity_jj_cust_apply_coupon'});
-            let couponField=currentRecord.getValue({fieldId:'custentity_jj_cust_coupon_field'});
 
-            if(applyCoupon && (couponField.length<5))
-            {
-                alert('Invalid Coupon/Coupon Code not Entered');
-                return false;
-            }
-            log.debug({
-                title: 'Validated the Field',
-                details: 'Validated the Coupon Code Field'
-            })
-
-            log.debug({
-                title: 'Saved the Record',
-                details: 'Saved the record Successfully'
-            })
-            return true;
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error in Saving Record',
-                details: e.message
-            });
-            return false
-        }
     }
 
-    function validateCheckBox(cRecord, checkbox)
+    function checkboxValidation(record, checkboxValue)
+    {
+        if(checkboxValue)
         {
-            let coupunField=cRecord.getField({fieldId: 'custentity_jj_cust_coupon_field'});
-            if(checkbox)
-            {
-                coupunField.isDisabled = false;
-                console.log('Coupon Code field enabled'); 
-            }
+            record.setValue({
+                fieldId: 'custbody_jj_custom_so_textbox',
+                value: 'passed'
+            });
 
-            else if(!checkbox)
-            {
-                coupunField.isDisabled = true;
-                console.log('Coupon Code field disabled');
-                cRecord.setValue({
-                    fieldId:'custentity_jj_cust_coupon_field',
-                    value: ''
-                });
-                console.log('Coupon Code field cleared');
-            }
+            log.debug({
+                title: 'Checkbox Checked',
+                details: 'Field Value changed to Passed'
+            });
+
+            console.log('Checkbox Enabled and Value set to Passed');
         }
 
+        else if(!checkboxValue)
+            {
+                record.setValue({
+                    fieldId: 'custbody_jj_custom_so_textbox',
+                    value: 'failed'
+                });
+
+                log.debug({
+                    title: 'Checkbox Unchecked',
+                    details: 'Field Value changed to Failed'
+                });
+
+                console.log('Checkbox Disabled and Value set to Failed');
+            }
+    }
+
     return {
-        pageInit: pageInit,
-        fieldChanged: fieldChanged,
+        // pageInit: pageInit,
+         fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
@@ -253,7 +220,7 @@ function(record) {
         // validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-        saveRecord: saveRecord
+        // saveRecord: saveRecord
     };
     
 });
