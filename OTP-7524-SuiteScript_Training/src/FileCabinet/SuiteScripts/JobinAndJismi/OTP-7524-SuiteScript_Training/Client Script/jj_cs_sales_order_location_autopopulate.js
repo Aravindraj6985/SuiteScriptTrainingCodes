@@ -36,30 +36,47 @@ function(record) {
      */
     
     function fieldChanged(scriptContext) {
-        debugger;
+        
+    }
+
+    /**
+     * Function to be executed when field is slaved.
+     *
+     * @param {Object} scriptContext
+     * @param {Record} scriptContext.currentRecord - Current form record
+     * @param {string} scriptContext.sublistId - Sublist name
+     * @param {string} scriptContext.fieldId - Field name
+     *
+     * @since 2015.2
+     */
+    function postSourcing(scriptContext) {
         try
         {
-            if (context.fieldId === 'location') {
-                var salesOrderRecord = context.currentRecord;
-                var bodyLocation = salesOrderRecord.getValue('location');
+            var salesOrderRecord = scriptContext.currentRecord;
+            if (scriptContext.fieldId === 'location') {
+               
+                var bodyLocation = salesOrderRecord.getText({fieldId: 'location'});
+                console.log('Location: '+bodyLocation);
                 var lineCount = salesOrderRecord.getLineCount({ sublistId: 'item' });
+                console.log('Line Count: '+lineCount);
         
-                for (var i = 0; i < lineCount; i++) {
+                for (let i = 0; i < lineCount; i++) {
                     salesOrderRecord.selectLine({ sublistId: 'item', line: i });
-                    var lineLocation = salesOrderRecord.getCurrentSublistValue({ sublistId: 'item', fieldId: 'location' });
+                    salesOrderRecord.setCurrentSublistText({
+                        sublistId: 'item',
+                        fieldId: 'custcol_jj_location_new',
+                        text: bodyLocation,
+                        ignoreFieldChange: true
+                    });
+                    salesOrderRecord.commitLine({ sublistId: 'item' });
+                    //var lineLocation = salesOrderRecord.getCurrentSublistValue({ sublistId: 'item', fieldId: 'location' });
         
                     // Override the existing location with the body location
-                    if (lineLocation !== bodyLocation) {
-                        salesOrderRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'location',
-                            value: bodyLocation,
-                            ignoreFieldChange: true
-                        });
-                        salesOrderRecord.commitLine({ sublistId: 'item' });
+                    //if (lineLocation !== bodyLocation) {
+                        
                     }
                 }
-            }
+            
         //    let cRecord = scriptContext.currentRecord;
         //    if(cRecord.fieldId == 'location')
         //    {
@@ -113,19 +130,6 @@ function(record) {
             });
         }
 
-    }
-
-    /**
-     * Function to be executed when field is slaved.
-     *
-     * @param {Object} scriptContext
-     * @param {Record} scriptContext.currentRecord - Current form record
-     * @param {string} scriptContext.sublistId - Sublist name
-     * @param {string} scriptContext.fieldId - Field name
-     *
-     * @since 2015.2
-     */
-    function postSourcing(scriptContext) {
 
     }
 
@@ -229,7 +233,7 @@ function(record) {
      */
     function saveRecord(scriptContext) {
 
-        var currentRecord = context.currentRecord;
+        var currentRecord = scriptContext.currentRecord;
         var bodyLocation = currentRecord.getValue('location');
         var lineCount = currentRecord.getLineCount({ sublistId: 'item' });
 
@@ -252,15 +256,15 @@ function(record) {
 
     return {
         // pageInit: pageInit,
-         fieldChanged: fieldChanged,
-        // postSourcing: postSourcing,
+        // fieldChanged: fieldChanged,
+         postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
         // validateField: validateField,
         // validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-         saveRecord: saveRecord
+        // saveRecord: saveRecord
     };
     
 });

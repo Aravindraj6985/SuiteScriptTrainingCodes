@@ -20,6 +20,40 @@ function(record) {
      */
     function pageInit(scriptContext) {
 
+        try
+        {
+            // if(scriptContext.fieldId === 'item')
+            // {
+                let cRec = scriptContext.currentRecord;
+
+                let vendor = CurrentRecord.getValue({
+                    fieldId: 'entity'
+                });
+                
+                console.log('Vendor ID: '+vendor);
+                let itemId = cRec.getCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'item'
+                });
+                console.log('Item ID: '+itemId);
+
+                let itemInitialQty = cRec.getCurrentSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'quantity'
+                });
+                console.log('Item Initial Quantity: '+itemInitialQty);
+
+                
+            //}
+        }
+        catch(e)
+        {
+            log.debug({
+                title: 'Error in Execution',
+                details: e.message 
+            });
+        }
+
     }
 
     /**
@@ -35,7 +69,7 @@ function(record) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
-  
+
         
 
     }
@@ -51,38 +85,6 @@ function(record) {
      * @since 2015.2
      */
     function postSourcing(scriptContext) {
-
-        try
-        {
-            if(scriptContext.fieldId === 'item')
-            {
-                let cRec = scriptContext.currentRecord;
-                let itemId = cRec.getCurrentSublistValue({
-                    sublistId: 'item',
-                    fieldId: 'item'
-                });
-                console.log('Item Id: '+itemId);
-    
-                let itemRcd = record.load({
-                    type: record.Type.INVENTORY_ITEM,
-                    id: itemId
-                });
-    
-                let length=itemRcd.getValue({fieldId: 'custitem_jj_length_item'});
-                let breadth=itemRcd.getValue({fieldId: 'custitem_jj_breadth_item'});
-                let height=itemRcd.getValue({fieldId: 'custitem_jj_height_item'});
-                console.log(`Length: ${length}, Breadth: ${breadth}, Height: ${height}`);
-    
-                setContainerBoxValue(cRec, length, breadth, height);       
-            }
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error In Execution',
-                details: e.message
-            });
-        }
 
     }
 
@@ -143,7 +145,6 @@ function(record) {
      */
     function validateLine(scriptContext) {
 
-      
     }
 
     /**
@@ -189,47 +190,10 @@ function(record) {
 
     }
 
-    function setContainerBoxValue(rec, len, bre, hei)
-    {
-        let rate = rec.getCurrentSublistValue({
-            sublistId: 'item',
-            fieldId: 'rate'
-        });
-
-        console.log('Rate: '+rate);
-
-        let cBoxValue = len * bre * hei;
-        console.log('Calculated Container Box Value: '+cBoxValue);
-
-        if(cBoxValue !==0)
-        {
-            rec.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'custcol_jj_cpntainer_box',
-                value: cBoxValue,
-                ignoreFieldChange: true
-            });
-     
-            let amount = rate * cBoxValue;
-            rec.setCurrentSublistValue({
-                sublistId: 'item',
-                fieldId: 'amount',
-                value: amount,
-                ignoreFieldChange: true
-            });
-            console.log('Amount: '+amount);
-    
-            Record.commitLine({
-                sublistId: 'item'
-            })
-        }
-        
-    }
-
     return {
-        // pageInit: pageInit,
+        //  pageInit: pageInit,
         // fieldChanged: fieldChanged,
-         postSourcing: postSourcing,
+        // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
         // validateField: validateField,
