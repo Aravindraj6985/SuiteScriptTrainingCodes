@@ -19,7 +19,7 @@ function(record) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-
+  
     }
 
     /**
@@ -34,80 +34,29 @@ function(record) {
      *
      * @since 2015.2
      */
-    
     function fieldChanged(scriptContext) {
-        debugger;
+        
         try
         {
-            if(fieldId === 'location')
+            let cRecord = scriptContext.currentRecord;
+            let fieldId = scriptContext.fieldId;
+            if(fieldId === 'custbody_jj_custom_so_checkbox')
             {
-                let cRecord = scriptContext.currentRecord;
-                let bodyLocation=cRecord.getValue({fieldId: 'location'});
-                console.log('Body Location: '+bodyLocation);
-
+                let checkbox=cRecord.getValue({fieldId: 'custbody_jj_custom_so_checkbox'});
+                checkboxValidation(cRecord, checkbox);
                 log.debug({
-                    title: 'Body Location Fetched',
-                    details: 'Location From Body Fetched: '+bodyLocation
+                    title: 'Field Changed',
+                    details: 'Field Change Detected'
                 });
-
-                let lineCount=cRecord.getLineCount({sublistId: 'item'});
-                console.log('Line Count: '+lineCount);
-
-                log.debug({
-                    title: 'Line Count',
-                    details: 'Number of lines: '+lineCount
-                });
-
-                for(let i=0; i<lineCount; i++)
-                {
-                    cRecord.selectLine('item', i );
-                    cRecord.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'location',
-                        value: bodyLocation
-                    });
-
-                    console.log('Line location set to '+bodyLocation);
-                    log.debug({
-                        title: 'Line Location Set',
-                        details: 'Line location set is '+bodyLocation
-                    });
-                    cRecord.commitLine({sublistId: 'item'});
-                    console.log('Commited line');
-                }
-
             }
-            
-            // let fieldId = scriptContext.fieldId;
-            // let subFieldId = scriptContext.sublistId;
-            // if(fieldId === 'location')
-            // {
-                
-            //     log.debug({
-            //         title: 'Body Location Fetched',
-            //         details: 'Location From Body Fetched: '+location
-            //     });
-            //     console.log('Body Location: '+location);
-            //}
-
-            // if(subFieldId === 'item')
-            // {
-            //     let itemLocation=cRecord.getValue({fieldId: 'item.location'})
-            //     log.debug({
-            //         title: 'Line Location Fetched',
-            //         details: 'Location From Line Fetched: '+itemLocation
-            //     });
-            //     console.log('line Location: '+itemLocation);
-            // }
-                
         }
         catch(e)
         {
             log.debug({
-                title: 'Error in Field Validation',
+                title: 'Error in Field Change',
                 details: e.message
             });
-        }
+        }    
 
     }
 
@@ -225,6 +174,39 @@ function(record) {
      */
     function saveRecord(scriptContext) {
 
+    }
+
+    function checkboxValidation(record, checkboxValue)
+    {
+        if(checkboxValue)
+        {
+            record.setValue({
+                fieldId: 'custbody_jj_custom_so_textbox',
+                value: 'passed'
+            });
+
+            log.debug({
+                title: 'Checkbox Checked',
+                details: 'Field Value changed to Passed'
+            });
+
+            console.log('Checkbox Enabled and Value set to Passed');
+        }
+
+        else if(!checkboxValue)
+            {
+                record.setValue({
+                    fieldId: 'custbody_jj_custom_so_textbox',
+                    value: 'failed'
+                });
+
+                log.debug({
+                    title: 'Checkbox Unchecked',
+                    details: 'Field Value changed to Failed'
+                });
+
+                console.log('Checkbox Disabled and Value set to Failed');
+            }
     }
 
     return {

@@ -3,11 +3,9 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record'],
-/**
- * @param{record} record
- */
-function(record) {
+define([],
+
+function() {
     
     /**
      * Function to be executed after page is initialized.
@@ -19,7 +17,9 @@ function(record) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-  
+
+        console.log('Client Script Trigger');
+
     }
 
     /**
@@ -35,29 +35,6 @@ function(record) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
-
-        debugger;
-        try
-        {
-            let cRecord = scriptContext.currentRecord;
-            let fieldId = scriptContext.fieldId;
-            if(fieldId === 'custbody_jj_custom_so_checkbox')
-            {
-                let checkbox=cRecord.getValue({fieldId: 'custbody_jj_custom_so_checkbox'});
-                checkboxValidation(cRecord, checkbox);
-                log.debug({
-                    title: 'Field Changed',
-                    details: 'Field Change Detected'
-                });
-            }
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error in Field Change',
-                details: e.message
-            });
-        }    
 
     }
 
@@ -177,42 +154,9 @@ function(record) {
 
     }
 
-    function checkboxValidation(record, checkboxValue)
-    {
-        if(checkboxValue)
-        {
-            record.setValue({
-                fieldId: 'custbody_jj_custom_so_textbox',
-                value: 'passed'
-            });
-
-            log.debug({
-                title: 'Checkbox Checked',
-                details: 'Field Value changed to Passed'
-            });
-
-            console.log('Checkbox Enabled and Value set to Passed');
-        }
-
-        else if(!checkboxValue)
-            {
-                record.setValue({
-                    fieldId: 'custbody_jj_custom_so_textbox',
-                    value: 'failed'
-                });
-
-                log.debug({
-                    title: 'Checkbox Unchecked',
-                    details: 'Field Value changed to Failed'
-                });
-
-                console.log('Checkbox Disabled and Value set to Failed');
-            }
-    }
-
     return {
-        // pageInit: pageInit,
-         fieldChanged: fieldChanged,
+        pageInit: pageInit,
+        // fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
