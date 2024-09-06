@@ -3,11 +3,12 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record', 'N/email', 'N/runtime'],
+define(['N/record', 'N/search'],
 /**
  * @param{record} record
+ * @param{search} search
  */
-function(record, email, runtime) {
+function(record, search) {
     
     /**
      * Function to be executed after page is initialized.
@@ -19,8 +20,7 @@ function(record, email, runtime) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-        
-        
+
     }
 
     /**
@@ -36,7 +36,77 @@ function(record, email, runtime) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
-        
+        try
+        {
+            if(scriptContext.fieldId === 'item'
+
+                
+            )
+            {
+                let cRec = scriptContext.currentRecord;
+                let lineCount = cRec.getLineCount({
+                    sublistId: 'item'
+                });
+                // for(let i=0; i<lineCount; i++)
+                // {
+                    let itemId = cRec.getCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'item'
+                    });
+                    console.log('Item Id: '+itemId);
+                    
+                    let qtyOrdered = cRec.getCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'quantity'
+                    });
+                    console.log('Quantity Ordered: '+qtyOrdered);
+    
+                    // let itemRcd = record.load({
+                    //     type: record.Type.INVENTORY_ITEM,
+                    //     id: itemId
+                    // });
+                    // console.log('record loaded'+itemRcd)
+    
+                    let qty = cRec.getCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'quantityonhand'
+                    });
+                    console.log('Quantity Available: '+qty);
+
+                    cRec.setCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_jj_item_availability',
+                        value: qty
+                    })
+    
+                    if(qtyOrdered < qty  || qtyOrdered === qty)
+                    {
+                        cRec.setValue({
+                            fieldId: 'custbody_jj_item_availability_status',
+                            value: 'Available'
+                        })
+                    }
+    
+                    else(qtyOrdered > qty)
+                    {
+                        cRec.setValue({
+                            fieldId: 'custbody_jj_item_availability_status',
+                            value: 'Backordered'
+                        })
+                    }
+               // }
+                
+
+            }
+        }
+        catch(e)
+        {
+            log.debug({
+                title: 'Error in Execution',
+                details: e.stack
+            });
+        }
+
 
     }
 
@@ -52,6 +122,8 @@ function(record, email, runtime) {
      */
     function postSourcing(scriptContext) {
 
+       
+
     }
 
     /**
@@ -64,6 +136,7 @@ function(record, email, runtime) {
      * @since 2015.2
      */
     function sublistChanged(scriptContext) {
+
 
     }
 
@@ -153,110 +226,42 @@ function(record, email, runtime) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
+
         try
         {
-            let poRec = scriptContext.currentRecord;
-            console.log('Triggered');
-
-            let vendorId = poRec.getValue({
-                fieldId: 'entity'
+            let cRecord=scriptContext.currentRecord;
+            let statusField = cRecord.getValue({
+                fieldId: 'custbody_jj_item_availability_status'
             });
-            console.log('Vendor: '+vendorId);
 
-            let poNumber = poRec.getValue({
-                fieldId: 'tranid'
-            });
-            console.log('PO Number: '+poNumber);
+            if(statusField === 'Available')
+            {
+                console.log('Sale Order Saved');
+                return true;
+            }
 
-            let lineCount = poRec.getLineCount({
-                sublistId: 'item'
-            });
-            console.log('Line Count: '+lineCount);
-            
-            let vendorRcd = record.load({
-                type: record.Type.VENDOR,
-                id: vendorId
-            });
-            let vendorEmail = vendorRcd.getValue({
-                fieldId: 'email'
-            })
-            console.log('Vendor Email: '+vendorEmail);
-            let itemUpdate = [];
-
-            log.debug({
-                title: 'triggered',
-                details: 'vendorEmail'
-            })
-
-            for(let i=0; i<lineCount; i++)
-                {
-                    let item = poRec.getSublistText({
-                        sublistId: 'item',
-                        fieldId: 'item',
-                        line: i
-                    });
-                    console.log('Item Name: '+item);
-        
-                    let initQty = poRec.getSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'quantity',
-                        line: i
-                    });
-                    console.log('Initial Item Quantity: '+initQty);
-        
-                    let newQty = poRec.getSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'quantity',
-                        line: i
-                    });
-                    console.log('New Item Quantity: '+newQty);
-                    log.debug({
-                        title: 'triggered',
-                        details: item, initQty, newQty
-                    })
-                    if(initQty !== newQty)
-                        {
-                            itemUpdate.push({item : item, initQty : initQty, newQty :newQty});
-                        }
-                    }
-                    if(itemUpdate.length > 0)
-                    {
-                        let subject = 'The Quantity Updated in the PO: '+poNumber;
-                        let body = 'The following items in the item line have been updated: \n \n';
-                        itemUpdate.forEach(function(items)
-                        {
-                            body += `Item Name: ${items.item} \n Old Quantity: ${items.initQty} \n New Quantity: ${items.newQty} \n\n`;
-                        })
-                        
-                        email.send({
-                            author: runtime.getCurrentUser().id,
-                            body: body,
-                            recipients: [vendorEmail],
-                            subject: subject
-                        })
-                        console.log('Email Sent to: ' + vendorEmail);
-                        log.debug({
-                            title: 'mail sent',
-                            details: 'mailed'
-                        })
-                    }
-                
-            
-            return true;
+            else if(statusField === 'Backordered')
+            {
+                console.log('Sale Order Not Saved');
+                alert('Quantity not available');
+                return false;
+            }
+    
         }
         catch(e)
         {
             log.debug({
-                title: 'Error in Execution',
-                details: e.stack 
+                title: 'Error in Saving',
+                details: e.stack
             });
         }
+
 
     }
 
     return {
         // pageInit: pageInit,
-        // fieldChanged: fieldChanged,
+         fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
@@ -268,6 +273,3 @@ function(record, email, runtime) {
     };
     
 });
-
-    
-

@@ -3,11 +3,11 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record', 'N/email', 'N/runtime'],
+define(['N/record'],
 /**
  * @param{record} record
  */
-function(record, email, runtime) {
+function(record) {
     
     /**
      * Function to be executed after page is initialized.
@@ -19,8 +19,7 @@ function(record, email, runtime) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-        
-        
+
     }
 
     /**
@@ -36,7 +35,27 @@ function(record, email, runtime) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
-        
+        try
+        {
+            let cRec = scriptContext.currentRecord;
+            let fieldId = scriptContext.fieldId;
+            if(fieldId === 'custentity_jj_cust_preferred_level');
+            {
+                let fieldValue=cRec.getText({
+                    fieldId: 'custentity_jj_cust_preferred_level'
+                });
+                console.log(fieldValue);
+                setDiscount(cRec, fieldValue);
+                console.log('Discount Set as per Level');
+            }
+        }
+        catch(e)
+        {
+            log.debug({
+                title: 'Error in Execution',
+                details: e.message
+            });
+        }
 
     }
 
@@ -153,110 +172,45 @@ function(record, email, runtime) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
-        try
+
+    }
+
+    function setDiscount(record, level)
+    {
+        if(level === 'Gold')
         {
-            let poRec = scriptContext.currentRecord;
-            console.log('Triggered');
-
-            let vendorId = poRec.getValue({
-                fieldId: 'entity'
+            console.log('Customer level: '+level);
+            record.setValue({
+                fieldId: 'custentity_jj_discount_percent_cust',
+                value: '15% Discount'
             });
-            console.log('Vendor: '+vendorId);
-
-            let poNumber = poRec.getValue({
-                fieldId: 'tranid'
-            });
-            console.log('PO Number: '+poNumber);
-
-            let lineCount = poRec.getLineCount({
-                sublistId: 'item'
-            });
-            console.log('Line Count: '+lineCount);
-            
-            let vendorRcd = record.load({
-                type: record.Type.VENDOR,
-                id: vendorId
-            });
-            let vendorEmail = vendorRcd.getValue({
-                fieldId: 'email'
-            })
-            console.log('Vendor Email: '+vendorEmail);
-            let itemUpdate = [];
-
-            log.debug({
-                title: 'triggered',
-                details: 'vendorEmail'
-            })
-
-            for(let i=0; i<lineCount; i++)
-                {
-                    let item = poRec.getSublistText({
-                        sublistId: 'item',
-                        fieldId: 'item',
-                        line: i
-                    });
-                    console.log('Item Name: '+item);
-        
-                    let initQty = poRec.getSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'quantity',
-                        line: i
-                    });
-                    console.log('Initial Item Quantity: '+initQty);
-        
-                    let newQty = poRec.getSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'quantity',
-                        line: i
-                    });
-                    console.log('New Item Quantity: '+newQty);
-                    log.debug({
-                        title: 'triggered',
-                        details: item, initQty, newQty
-                    })
-                    if(initQty !== newQty)
-                        {
-                            itemUpdate.push({item : item, initQty : initQty, newQty :newQty});
-                        }
-                    }
-                    if(itemUpdate.length > 0)
-                    {
-                        let subject = 'The Quantity Updated in the PO: '+poNumber;
-                        let body = 'The following items in the item line have been updated: \n \n';
-                        itemUpdate.forEach(function(items)
-                        {
-                            body += `Item Name: ${items.item} \n Old Quantity: ${items.initQty} \n New Quantity: ${items.newQty} \n\n`;
-                        })
-                        
-                        email.send({
-                            author: runtime.getCurrentUser().id,
-                            body: body,
-                            recipients: [vendorEmail],
-                            subject: subject
-                        })
-                        console.log('Email Sent to: ' + vendorEmail);
-                        log.debug({
-                            title: 'mail sent',
-                            details: 'mailed'
-                        })
-                    }
-                
-            
-            return true;
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error in Execution',
-                details: e.stack 
-            });
+            console.log('Discount Applied 15%');
         }
 
+        else if(level === 'Silver')
+        {
+            console.log('Customer level: '+level);
+            record.setValue({
+                fieldId: 'custentity_jj_discount_percent_cust',
+                value: '10% Discount'
+            });
+            console.log('Discount Applied 10%');
+        }
+
+        else if(level === 'Bronze')
+        {
+            console.log('Customer level: '+level);
+            record.setValue({
+                fieldId: 'custentity_jj_discount_percent_cust',
+                value: '5% Discount'
+            });
+            console.log('Discount Applied 5%');
+        }
     }
 
     return {
         // pageInit: pageInit,
-        // fieldChanged: fieldChanged,
+         fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
@@ -264,10 +218,7 @@ function(record, email, runtime) {
         // validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-         saveRecord: saveRecord
+        // saveRecord: saveRecord
     };
     
 });
-
-    
-
