@@ -28,7 +28,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
             });
 
             let list=addFormElements(form);
-            //salesOrderSearch();
+            salesOrderSearch();
             loadSearchResult(list)
             
             scriptContext.response.writePage(form);
@@ -123,12 +123,6 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
             });
 
             searchList.addField({
-                id: 'cust_jj_class',
-                label: 'Class',
-                type: serverWidget.FieldType.TEXT
-            });
-
-            searchList.addField({
                 id: 'cust_jj_line_number',
                 label: 'Line Number',
                 type: serverWidget.FieldType.TEXT
@@ -203,23 +197,21 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
             let salesOrderSearch = search.create({
                 type: search.Type.SALES_ORDER,
                 filters: [['mainline', 'is', 'T'], 'and', ['status','anyof',['SalesOrd:B', 'SalesOrd:D', 'SalesOrd:E', 'SalesOrd:F']]],
-                columns: ['tranid', 'entity', 'subsidiary', 'trandate', 'status'],
+                columns: ['tranid', 'trandate', 'status', 'entity', 'subsidiary', 'department',  'total'],
                 title: 'Sales Order Pending Search JJ',
                 id: 'customsearch_jj_sales_order_pending_sear',
                 isPublic: true
             });
-
-            let searchResult = salesOrderSearch.run().getRange({
-                start: 0,
-                end: 100
-            });
-
+// 'subtotal', 'taxtotal',
+            
+            let searchResult = salesOrderSearch.run();
+            salesOrderSearch.save();
             let searchNumber = searchResult.length;
             log.debug({
                 title: 'Search Result',
                 details: 'Number of sales order is '+searchNumber
             });
-            salesOrderSearch.save();
+            
         }
 
         function loadSearchResult(searchList)
@@ -229,6 +221,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
             });
 
             let lineCounter = 0;
+            let lineNumner = 1;
             myResult.run().each(function(result){
                 let id = result.id;
                 let documentNumber = result.getValue({
@@ -239,6 +232,10 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                     name: 'trandate'
                 }); 
 
+                let status = result.getText({
+                    name: 'status'
+                }); 
+
                 let customerName = result.getText({
                     name: 'entity'
                 }); 
@@ -247,10 +244,29 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                     name: 'subsidiary'
                 }); 
 
-                let status = result.getText({
-                    name: 'status'
+                let department = result.getText({
+                    name: 'department'
                 }); 
+
+                let subtotal = result.getText({
+                    name: 'subtotal'
+                });
+
+                let tax = result.getText({
+                    name: 'taxtotal'
+                });
+
+                let amount = result.getText({
+                    name: 'total'
+                });
                 
+                searchList.setSublistValue({
+                    sublistId: 'cust_jj_sublist',
+                    id: 'cust_jj_line_number',
+                    line: lineCounter,
+                    value: lineNumner
+                });
+
                 searchList.setSublistValue({
                     sublistId: 'cust_jj_sublist',
                     id: 'cust_jj_internalid',
@@ -264,19 +280,19 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                     line: lineCounter,
                     value: documentNumber
                 });
-                
-                searchList.setSublistValue({
-                    sublistId: 'cust_jj_sublist',
-                    id: 'cust_jj_docnum',
-                    line: lineCounter,
-                    value: documentNumber
-                });
 
                 searchList.setSublistValue({
                     sublistId: 'cust_jj_sublist',
                     id: 'cust_jj_date',
                     line: lineCounter,
                     value: orderDate
+                });
+
+                searchList.setSublistValue({
+                    sublistId: 'cust_jj_sublist',
+                    id: 'cust_jj_status',
+                    line: lineCounter,
+                    value: status
                 });
 
                 searchList.setSublistValue({
@@ -295,12 +311,34 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
 
                 searchList.setSublistValue({
                     sublistId: 'cust_jj_sublist',
-                    id: 'cust_jj_status',
+                    id: 'cust_jj_department',
                     line: lineCounter,
-                    value: status
+                    value: department
                 });
 
+                searchList.setSublistValue({
+                    sublistId: 'cust_jj_sublist',
+                    id: 'cust_jj_line_subtotal',
+                    line: lineCounter,
+                    value: subtotal
+                });
+
+                searchList.setSublistValue({
+                    sublistId: 'cust_jj_sublist',
+                    id: 'cust_jj_line_tax',
+                    line: lineCounter,
+                    value: tax
+                });
+
+                searchList.setSublistValue({
+                    sublistId: 'cust_jj_sublist',
+                    id: 'cust_jj_line_total',
+                    line: lineCounter,
+                    value: amount
+                });
+                
                 lineCounter++;
+                lineNumner++;
                 return true;
             })
         }
