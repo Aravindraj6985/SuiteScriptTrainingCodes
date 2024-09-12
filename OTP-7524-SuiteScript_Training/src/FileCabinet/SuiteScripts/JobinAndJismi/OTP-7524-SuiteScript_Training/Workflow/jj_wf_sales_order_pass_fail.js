@@ -20,8 +20,26 @@ define(['N/record'],
         const onAction = (scriptContext) => {
             try
             {
-                let id =createCustomRecord();
-                return id;
+                let cRec = scriptContext.newRecord;
+                let numberField = cRec.getValue({
+                    fieldId: 'custbody_jj_so_number'
+                });
+                
+                let resultField = '';
+                if (numberField >= 100)
+                {
+                    resultField = 'Result: Passed';
+                }
+
+                else 
+                {
+                    resultField = 'Result: Failed';
+                }
+
+                cRec.setValue({
+                    fieldId: 'custbody_jj_so_result',
+                    value: resultField
+                });
             }
             catch(e)
             {
@@ -30,32 +48,6 @@ define(['N/record'],
                     details: e.message
                 });
             }
-
-        }
-
-        function createCustomRecord()
-        {
-            let customRecord = record.create({
-                type: 'customrecord_jj_new_record',
-                isDynamic: true
-            });
-
-            customRecord.setValue({
-                fieldId: 'name',
-                value: 'Test Name'
-            });
-
-            customRecord.setValue({
-                fieldId: 'custrecord_jj_test_field',
-                value: 'Test Field'
-            });
-
-            let recordId = customRecord.save();
-            log.debug({
-                title: 'Record Created',
-                details: 'Record ID: '+recordId
-            });
-            return recordId;
 
         }
 

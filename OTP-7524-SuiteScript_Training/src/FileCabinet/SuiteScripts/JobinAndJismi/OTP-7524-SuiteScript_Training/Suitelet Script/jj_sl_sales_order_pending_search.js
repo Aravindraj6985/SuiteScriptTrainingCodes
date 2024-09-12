@@ -28,7 +28,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
             });
 
             let list=addFormElements(form);
-            salesOrderSearch();
+            //salesOrderSearch();
             loadSearchResult(list)
             
             scriptContext.response.writePage(form);
@@ -67,6 +67,8 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
             customerDropdownFilter(customerFilter);
             subsidiaryDropdownFilter(subsidiaryFilter);
 
+
+
             let searchList = form.addSublist({
                 id: 'cust_jj_sublist',
                 label: 'Sales Orders',
@@ -78,6 +80,12 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                 id: 'cust_jj_checkbox',
                 label: 'Select',
                 type: serverWidget.FieldType.CHECKBOX
+            });
+
+            searchList.addField({
+                id: 'cust_jj_line_number',
+                label: 'Line Number',
+                type: serverWidget.FieldType.TEXT
             });
 
             searchList.addField({
@@ -122,12 +130,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                 type: serverWidget.FieldType.TEXT
             });
 
-            searchList.addField({
-                id: 'cust_jj_line_number',
-                label: 'Line Number',
-                type: serverWidget.FieldType.TEXT
-            });
-
+            
             searchList.addField({
                 id: 'cust_jj_line_subtotal',
                 label: 'Subtotal',
@@ -194,6 +197,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
 
         function salesOrderSearch()
         {
+            let filters =m 
             let salesOrderSearch = search.create({
                 type: search.Type.SALES_ORDER,
                 filters: [['mainline', 'is', 'T'], 'and', ['status','anyof',['SalesOrd:B', 'SalesOrd:D', 'SalesOrd:E', 'SalesOrd:F']]],
@@ -202,7 +206,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                 id: 'customsearch_jj_sales_order_pending_sear',
                 isPublic: true
             });
-// 'subtotal', 'taxtotal',
+            // 'subtotal', 'taxtotal',
             
             let searchResult = salesOrderSearch.run();
             salesOrderSearch.save();
@@ -216,13 +220,29 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
 
         function loadSearchResult(searchList)
         {
-            let myResult = search.load({
-                id: 'customsearch_jj_sales_order_pending_sear'
+
+            let filters = [['mainline', 'is', 'T'], 'and', ['status','anyof',['SalesOrd:B', 'SalesOrd:D', 'SalesOrd:E', 'SalesOrd:F']]];
+            let subsidiary = scriptContext.request.parameters
+            let salesOrderSearch = search.create({
+                type: search.Type.SALES_ORDER,
+                filters: filters,
+                columns: ['tranid', 'trandate', 'status', 'entity', 'subsidiary', 'department',  'total'],
+                title: 'Sales Order Pending Search JJ',
+                id: 'customsearch_jj_sales_order_pending_sear',
+                isPublic: true
+            });
+            // let myResult = search.load({
+            //     id: 'customsearch_jj_sales_order_pending_sear'
+            // });
+            let searchNumber = salesOrderSearch.length;
+            log.debug({
+                title: 'Search Result',
+                details: 'Number of sales order is '+searchNumber
             });
 
             let lineCounter = 0;
             let lineNumner = 1;
-            myResult.run().each(function(result){
+            salesOrderSearch.run().each(function(result){
                 let id = result.id;
                 let documentNumber = result.getValue({
                     name: 'tranid'
@@ -237,7 +257,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                 }); 
 
                 let customerName = result.getText({
-                    name: 'entity'
+                    name: 'entity' 
                 }); 
 
                 let subsidairy = result.getText({
@@ -248,15 +268,24 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                     name: 'department'
                 }); 
 
-                let subtotal = result.getText({
+                if (!department)
+                    department = ' '
+
+                let subtotal = result.getValue({
                     name: 'subtotal'
                 });
 
-                let tax = result.getText({
+                if (!subtotal)
+                    subtotal = ' '
+
+                let tax = result.getValue({
                     name: 'taxtotal'
                 });
 
-                let amount = result.getText({
+                if (!tax)
+                    tax = ' '
+
+                let amount = result.getValue({
                     name: 'total'
                 });
                 
@@ -292,7 +321,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                     sublistId: 'cust_jj_sublist',
                     id: 'cust_jj_status',
                     line: lineCounter,
-                    value: status
+                    value: status || " "
                 });
 
                 searchList.setSublistValue({
@@ -320,7 +349,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                     sublistId: 'cust_jj_sublist',
                     id: 'cust_jj_line_subtotal',
                     line: lineCounter,
-                    value: subtotal
+                    value: amount-tax
                 });
 
                 searchList.setSublistValue({
