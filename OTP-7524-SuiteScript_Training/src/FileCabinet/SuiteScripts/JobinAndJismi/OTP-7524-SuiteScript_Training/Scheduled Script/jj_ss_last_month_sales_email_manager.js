@@ -52,11 +52,14 @@ define(['N/record', 'N/search', 'N/email'],
                         salesRepArray.push(salesRepIds);
                         log.debug('Sales Reps: '+salesRepArray);
                     }
+                    return true;
                 });
                 log.debug('Hello');
                 //log.debug('Sales Reps: '+salesRepArray);
-                salesRepCount = salesRepArray.length;
+                let salesRepCount = salesRepArray.length;
                 log.debug('Sales Rep Number: '+salesRepCount);
+
+                return salesRepArray
                 
                 
                 

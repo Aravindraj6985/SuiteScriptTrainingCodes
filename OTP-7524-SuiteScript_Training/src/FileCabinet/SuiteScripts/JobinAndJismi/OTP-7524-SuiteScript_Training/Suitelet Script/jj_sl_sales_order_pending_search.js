@@ -28,8 +28,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
             });
 
             let list=addFormElements(form);
-            //salesOrderSearch();
-            loadSearchResult(list)
+            loadSearchResult(list, scriptContext)
             
             scriptContext.response.writePage(form);
 
@@ -42,30 +41,28 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                 label: 'Sales Order Filter'
             });
 
-            form.addResetButton({
-                label: 'Reset'
-            });
-
             form.addSubmitButton({
-                label: 'Save'
+                label: 'Filter'
             });
 
             let customerFilter = form.addField({
                 id: 'cust_jj_cust_filter',
                 label: 'Customer Name',
                 type: serverWidget.FieldType.SELECT,
-                container: 'cust_jj_user_info'
+                container: 'cust_jj_user_info',
+                source: 'customer'
             });
 
             let subsidiaryFilter = form.addField({
                 id: 'cust_jj_subsidiary_filter',
                 label: 'Subsidairy',
                 type: serverWidget.FieldType.SELECT,
-                container: 'cust_jj_user_info'
+                container: 'cust_jj_user_info',
+                source: 'subsidiary'
             });
 
-            customerDropdownFilter(customerFilter);
-            subsidiaryDropdownFilter(subsidiaryFilter);
+            // customerDropdownFilter(customerFilter);
+            // subsidiaryDropdownFilter(subsidiaryFilter);
 
 
 
@@ -195,45 +192,53 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
             });
         }
 
-        function salesOrderSearch()
-        {
-            let filters =m 
-            let salesOrderSearch = search.create({
-                type: search.Type.SALES_ORDER,
-                filters: [['mainline', 'is', 'T'], 'and', ['status','anyof',['SalesOrd:B', 'SalesOrd:D', 'SalesOrd:E', 'SalesOrd:F']]],
-                columns: ['tranid', 'trandate', 'status', 'entity', 'subsidiary', 'department',  'total'],
-                title: 'Sales Order Pending Search JJ',
-                id: 'customsearch_jj_sales_order_pending_sear',
-                isPublic: true
-            });
-            // 'subtotal', 'taxtotal',
+        // function salesOrderSearch()
+        // {
+        //     let salesOrderSearch = search.create({
+        //         type: search.Type.SALES_ORDER,
+        //         filters: [['mainline', 'is', 'T'], 'and', ['status','anyof',['SalesOrd:B', 'SalesOrd:D', 'SalesOrd:E', 'SalesOrd:F']]],
+        //         columns: ['tranid', 'trandate', 'status', 'entity', 'subsidiary', 'department',  'total'],
+        //         title: 'Sales Order Pending Search JJ',
+        //         id: 'customsearch_jj_sales_order_pending_sear',
+        //         isPublic: true
+        //     });
+        //     // 'subtotal', 'taxtotal',
             
-            let searchResult = salesOrderSearch.run();
-            salesOrderSearch.save();
-            let searchNumber = searchResult.length;
-            log.debug({
-                title: 'Search Result',
-                details: 'Number of sales order is '+searchNumber
-            });
+        //     let searchResult = salesOrderSearch.run();
+        //     salesOrderSearch.save();
+        //     let searchNumber = searchResult.length;
+        //     log.debug({
+        //         title: 'Search Result',
+        //         details: 'Number of sales order is '+searchNumber
+        //     });
             
-        }
+        // }
 
-        function loadSearchResult(searchList)
+        function loadSearchResult(searchList, scriptContext)
         {
 
-            let filters = [['mainline', 'is', 'T'], 'and', ['status','anyof',['SalesOrd:B', 'SalesOrd:D', 'SalesOrd:E', 'SalesOrd:F']]];
-            let subsidiary = scriptContext.request.parameters
+            let subsidiary = scriptContext.request.parameters.cust_jj_subsidiary_filter;
+            let customer = scriptContext.request.parameters.cust_jj_cust_filter;
+
+            let filters = [['mainline', 'is', 'T'],'and', ['status', 'anyof', ['SalesOrd:B', 'SalesOrd:D', 'SalesOrd:E', 'SalesOrd:F']]];
+            
+            if (subsidiary) {
+                filters.push('and', ['subsidiary', 'anyof', subsidiary]);
+            }
+        
+            if (customer) {
+                filters.push('and', ['entity', 'anyof', customer]);
+            }
+
             let salesOrderSearch = search.create({
                 type: search.Type.SALES_ORDER,
                 filters: filters,
-                columns: ['tranid', 'trandate', 'status', 'entity', 'subsidiary', 'department',  'total'],
+                columns: ['tranid', 'trandate', 'status', 'entity', 'subsidiary', 'department','taxtotal', 'total'],
                 title: 'Sales Order Pending Search JJ',
-                id: 'customsearch_jj_sales_order_pending_sear',
+                id: 'customsearch_jj_so_pending_search_new',
                 isPublic: true
             });
-            // let myResult = search.load({
-            //     id: 'customsearch_jj_sales_order_pending_sear'
-            // });
+           
             let searchNumber = salesOrderSearch.length;
             log.debug({
                 title: 'Search Result',
