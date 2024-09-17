@@ -69,6 +69,7 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                     label: 'Submit'
                 });
 
+                form.clientScriptModulePath = 'SuiteScripts/JobinAndJismi/OTP-7524-SuiteScript_Training/Assessment/13-09-24/jj_cs_onam.js';
                 scriptContext.response.writePage(form);
                 log.debug('Form Created');
             }
@@ -162,23 +163,6 @@ define(['N/record', 'N/search', 'N/ui/serverWidget'],
                             details: 'Updated Commisssion Record ID: '+id
                         }); 
                     }
-                    // else
-                    // {
-                    //     log.debug('new Sales rep: '+salesRepNameValue);
-                    //     let commissionRecord = record.create({
-                    //         type: 'customrecord_jj_employee_commisiion',
-                    //         isDynamic: true
-                    //     });
-                        
-                    //     commissionRecord.setText({fieldId: 'name', text: salesRepNameValue});
-                    //     commissionRecord.setText({fieldId: 'custrecord_jj_commission_percent', text: commissionValue});
-                    //     log.debug('Sales Rep: '+salesRepNameValue+' Commission: '+commissionValue)
-                    //     let commissionRecordId = commissionRecord.save();
-                    //     log.debug({
-                    //         title: 'Record Created',
-                    //         details: 'Commisssion Record ID: '+commissionRecordId
-                    //     });
-                    // }
                     return true;
                     });
                 }

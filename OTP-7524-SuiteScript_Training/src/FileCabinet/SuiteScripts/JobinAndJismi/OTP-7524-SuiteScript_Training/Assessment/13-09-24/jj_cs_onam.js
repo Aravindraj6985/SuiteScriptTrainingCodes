@@ -20,54 +20,6 @@ function(record, search) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-        try
-        {
-            console.log('Client Script Triggered');
-            createSalesRepSearch();
-        }
-        catch(e)
-        {
-            log.debug({
-                title: 'Error in Executing',
-                details: e.stack
-            });    
-        }
-
-        function createSalesRepSearch()
-        {
-            try
-            {
-                let salesRepSearch = search.create({
-                    type: search.Type.INVOICE,
-                    filters: [['mainline','is','T'], 'and', ['status','anyof', ['CashSale:B','CashSale:C','CustInvc:A', 'CustInvc:B']]],
-                    columns: [  search.createColumn({ name: 'salesrep', summary: search.Summary.GROUP}),
-                                search.createColumn({ name: 'total', summary: search.Summary.SUM})],
-                    title: 'Sales Rep Invoice Search JJ',
-                    id: 'customsearch_jj_invoice_salesrep'
-                })
-                salesRepSearch.save;
-                salesRepSearch.run().each(function(result){
-                    let salesRep = result.getText({
-                        name: 'salesrep'
-                    });
-                    let amount = result.getText({
-                        name: 'total'
-                    });
-                    log.debug('Sales Rep: '+salesRep+'  Amount: '+amount)
-                    return true;
-
-                });
-                
-            }
-            catch(e)
-            {
-                log.debug({
-                    title: 'Error in creating search',
-                    details: e.stack
-                });
-            }
-        }
-        
 
     }
 
@@ -86,15 +38,9 @@ function(record, search) {
     function fieldChanged(scriptContext) {
         try
         {
-            console.log('Client Script Field Change Triggered');
-            let currentRecord=scriptContext.currentRecord;
-            let fieldId = scriptContext.fieldId;
-            if(fieldId == 'cust_jj_salesrep_filter')
-            {
-                let employeename=currentRecord.getValue({fieldId: 'cust_jj_salesrep_filter'});
-                log.debug('Employee ID: '+employeename);
-            }
-
+            let cRec = scriptContext.currentRecord;
+            let field = scriptContext.fieldId;
+            commissionCalculate(cRec, field);
         }
         catch(e)
         {
@@ -103,10 +49,6 @@ function(record, search) {
                 details: e.stack
             });    
         }
-
-        console.log('Client Script Triggered');
-
-
     }
 
     /**
@@ -225,17 +167,70 @@ function(record, search) {
 
     }
 
+    function commissionCalculate(record, field)
+    {
+        try
+        {
+            if(field === 'cust_jj_salesrep_filter')
+            {
+                let salesRep = record.getValue('cust_jj_salesrep_filter');
+                let filters = [['mainline', 'is', 'T'],'and', ['status', 'anyof', ['CustInvc:A', 'CustInvc:B', 'CashSale:B', 'SalesOrd:C']]];
+                if(salesRep)
+                {
+                    filters.push('and', ['salesrep.internalid', 'is', salesRep]);
+                }
+                
+                let transactionSearch = search.create({
+                    type: search.Type.TRANSACTION,
+                    filters: filters,
+                    columns: ['entity','total']
+                });
+
+                let pageData = transactionSearch.runPaged({
+                    pageSize: 1000
+                });
+
+                //let length = pageData.count;
+                
+                let total = 0;
+                for(let i=0; i<pageData.pageRanges.length; i++)
+                {
+                    let currentPage = pageData.fetch({index: i});
+                    for (let j=0; j<currentPage.data.length; j++)
+                    {
+                        let result = currentPage.data[i];
+                        total += Number(result.getValue('total'));
+                    }
+                }
+
+                let commission = total*0.02;
+                record.setValue({
+                    fieldId: 'cust_jj_commission',
+                    value: commission,
+                    ignoreFieldChange: true
+                });
+            }           
+        }
+        catch(e)
+        {
+            log.debug({
+                title: 'Error in Calulating Commission',
+                details: e.stack
+            });
+        }
+    }
+
     return {
-        pageInit: pageInit,
+        // pageInit: pageInit,
         fieldChanged: fieldChanged,
-        postSourcing: postSourcing,
-        sublistChanged: sublistChanged,
-        lineInit: lineInit,
-        validateField: validateField,
-        validateLine: validateLine,
-        validateInsert: validateInsert,
-        validateDelete: validateDelete,
-        saveRecord: saveRecord
+        // postSourcing: postSourcing,
+        // sublistChanged: sublistChanged,
+        // lineInit: lineInit,
+        // validateField: validateField,
+        // validateLine: validateLine,
+        // validateInsert: validateInsert,
+        // validateDelete: validateDelete,
+        // saveRecord: saveRecord
     };
     
 });
