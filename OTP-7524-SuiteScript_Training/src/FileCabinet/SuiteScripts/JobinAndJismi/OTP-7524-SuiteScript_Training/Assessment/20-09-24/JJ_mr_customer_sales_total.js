@@ -2,13 +2,12 @@
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
-define(['N/email', 'N/record', 'N/search'],
+define(['N/record', 'N/search'],
     /**
- * @param{email} email
  * @param{record} record
  * @param{search} search
  */
-    (email, record, search) => {
+    (record, search) => {
         /**
          * Defines the function that is executed at the beginning of the map/reduce process and generates the input data.
          * @param {Object} inputContext
@@ -25,13 +24,13 @@ define(['N/email', 'N/record', 'N/search'],
         const getInputData = (inputContext) => {
             try
             {
-                let salesOrderSearch = search.create({
+                let salesSearch = search.create({
                     type: search.Type.SALES_ORDER,
-                    filters: [['mainline', 'is', 'T'], 'and', ['status', 'anyof', 'SalesOrd:A'], 'and', ['trandate', 'within', 'thismonth']],
-                    columns: ['entity', 'trandate', 'tranid', 'salesrep', 'total', 'status']
+                    filters: [['mainline', 'is', 'T'],'and', ['status', 'noneof', ['SalesOrd:C', 'SalesOrd:H']]],
+                    columns: [search.createColumn({name: 'entity',summary: 'GROUP',label: 'Customer Name'}),
+                               search.createColumn({name: 'total',summary: 'SUM',label: 'Total Amount'})]
                 });
-
-                return salesOrderSearch;
+                return salesSearch;
             }
             catch(e)
             {
@@ -42,7 +41,6 @@ define(['N/email', 'N/record', 'N/search'],
             }
 
         }
-
 
         /**
          * Defines the function that is executed when the map entry point is triggered. This entry point is triggered automatically
@@ -64,62 +62,22 @@ define(['N/email', 'N/record', 'N/search'],
         const map = (mapContext) => {
             try
             {
-                let searchResult = JSON.parse(mapContext.value);
-                let id = searchResult.id;
-                let salesRep = searchResult.values.salesrep.value;
-                let customerName = searchResult.values.entity.value;
-                let docNumber = searchResult.values.tranid;
-                let amount = searchResult.values.total;
-                log.debug(`ID: ${id} Rep ${salesRep} Customer ${customerName} Documet ${docNumber} Amount ${amount}`);
-
-                record.submitFields({
-                    type: record.Type.SALES_ORDER,
-                    id: id,
-                    values: {orderstatus: 'B'} 
-                });
-                log.debug('Sales order status changed');
-
-                let adminSearch = search.create({
-                    type: search.Type.EMPLOYEE,
-                    filters: ['role', 'anyof', 3],
-                    columns: ['internalid']
-                });
-
-                let author = '';
-                adminSearch.run().each(function(result){
-                    author = result.getValue('internalid');
-                });
-
-                if(salesRep)
-                {
-                    email.send({
-                        author: author,
-                        body: `Sales Order status have been updated to Pending Fulfilment for 
-                                        Customer: ${customerName} with Document Number: ${docNumber}`,
-                        recipients: salesRep,
-                        subject: 'Sales Order Status Updated'
-                    });
-                    log.debug('Mail send to: '+salesRep);
-                }
-                else
-                {
-                    email.send({
-                        author: author,
-                        body: `Customer: ${customerName} does not have salesrep. Update salesrep for the customer`,
-                        recipients: 849,
-                        subject: 'Customer with no sales rep found'
-                    });
-                    log.debug('Mail send to Admin');
-                }
+                let mapData = JSON.parse(mapContext.value);
+                let mapDataValues = mapData.values;
+                let stringifyValues = JSON.stringify(mapDataValues);
+                let cleanString = stringifyValues.replace(/[()]/g, '');
+                let newObject = JSON.parse(cleanString);
+                let customerName = newObject.GROUPentity.text;
+                let amount = newObject.SUMtotal;
+                log.debug(`Customer: ${customerName} Amount: ${amount}`);
             }
             catch(e)
             {
                 log.debug({
-                    title: 'Error in processing map reduce',
+                    title: 'Error in processing map',
                     details: e.message
                 });
             }
-
         }
 
         /**

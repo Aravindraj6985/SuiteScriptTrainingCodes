@@ -21,7 +21,7 @@ define(['N/record', 'N/search', 'N/email'],
 
             try
             {
-                loadSearch();
+                findSalesReps();
             }
             catch(e)
             {
@@ -31,51 +31,86 @@ define(['N/record', 'N/search', 'N/email'],
                 });
             }
 
-            function loadSearch()
+            function findSalesReps()
             {
-                let salesRepArray = [];
-                let salesOrderSearch = search.create({
-                    type: search.Type.SALES_ORDER,
-                    filters: [['mainline', 'is', 'T'], 'and',['trandate', 'within', 'this month']],
-                    columns: [ search.createColumn({ name: 'salesrep', summary: search.Summary.GROUP})],
-                    title: 'Sales order This Month Mail JJ',
-                    id: 'customsearch_jj_so_this_month_mail',
-                    isPublic: true
-                });
-                
-                log.debug('Hello');
-                salesOrderSearch.run().each(function(result){
-                    let salesRepIds = result.getValue({name: 'salesrep', summary: search.Summary.GROUP});
-                    if(salesRepIds)
-                    {
-                        log.debug('Hello');
-                        salesRepArray.push(salesRepIds);
-                        log.debug('Sales Reps: '+salesRepArray);
-                    }
-                    return true;
-                });
-                log.debug('Hello');
-                //log.debug('Sales Reps: '+salesRepArray);
-                let salesRepCount = salesRepArray.length;
-                log.debug('Sales Rep Number: '+salesRepCount);
+                try
+                {
+                    let salesRepSearch = search.create({
+                        type: search.Type.EMPLOYEE,
+                        filters: [['salesrep', 'is', 'T'], 'and', ['isinactive', 'is', 'F']] ,
+                        columns: ['internalid']
+                    });
+    
+                    salesRepSearch.run().each(function(result){
+                        let salesRepID = result.getValue('internalid');
 
-                return salesRepArray
-                
-                
-                
-                // salesOrderSearch.run().each(element => {
-                //     let internalId = element.getValue('internalid');
-                //     let DocumentNumber = element.getValue('tranid');
-                //     let Date = element.getValue('trandate');
-                //     let amount = element.getValue('total');
-                //     let status = element.getValue('status');
-                //     let customerName = element.getValue('entity');
+                        let salesRepRec = record.load({
+                            type: record.Type.EMPLOYEE,
+                            id: salesRepID
+                        });
 
-                    
-                // });
+                        let supervisorID = salesRepRec.getValue('supervisor');
+                        
+                        if(supervisorID)
+                        {
+                            log.debug('Sales Rep: '+salesRepID+' Supervisor: '+supervisorID);
+                            salesOrderSearch(salesRepID, supervisorID);
+                        }
+                        else
+                        {
+                            log.debug('Supervisor not available');
+                        }
+                        return true;
+                    });
+                }
+                catch(e)
+                {
+                    log.debug({
+                        title: 'Error in Finding Sales Reps',
+                        details: e.message
+                    }); 
+                }
+            }
 
+            function salesOrderSearch(salesrep, supervisor)
+            {
+                try
+                {
+                    let salesOrderSearch = search.create({
+                        type: search.Type.SALES_ORDER,
+                        filters: [['mainline', 'is', 'T'], 'and', ['salesrep', 'is', salesrep], 'and',['trandate', 'within', 'thismonth']],
+                        columns: ['entity', 'trandate', 'tranid', 'total', 'status']
+                    });
 
-                
+                    salesOrderSearch.run().each(function(result){
+                        let docId = result.id;
+                        let customerName = result.getValue('entity');
+                        let date = result.getValue('trandate');
+                        let soNumber = result.getValue('tranid');
+                        let amount = result.getValue('total');
+                        let status = result.getValue('status');
+
+                    log.debug('Entity: '+customerName+' Amount: '+amount+' Status: '+status+' ID: '+docId);
+                    email.send({
+                        author: salesrep,
+                        body: `Monthly sales order report of ${salesrep} \n
+                                Customer Name: ${customerName} \n
+                                Date: ${date} Document No: ${soNumber} \n
+                                Amount: ${amount} Status: ${status}`,
+                        recipients: supervisor,
+                        subject: `ID:${salesrep} (salesrep) monthly sales report` 
+                    });
+                    log.debug('email send to supervisor');
+                    return true;  
+                    });
+                }
+                catch(e)
+                {
+                    log.debug({
+                        title: 'Error in searching Sales order & mailinglog',
+                        details: e.message
+                    });   
+                }
             }
 
         }

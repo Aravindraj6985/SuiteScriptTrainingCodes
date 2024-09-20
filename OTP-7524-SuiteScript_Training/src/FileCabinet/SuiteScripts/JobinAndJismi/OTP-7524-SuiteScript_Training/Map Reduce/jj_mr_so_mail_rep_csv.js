@@ -23,26 +23,26 @@ define(['N/email', 'N/record', 'N/search'],
          */
 
         const getInputData = (inputContext) => {
+
             try
             {
-                let salesOrderSearch = search.create({
-                    type: search.Type.SALES_ORDER,
-                    filters: [['mainline', 'is', 'T'], 'and', ['status', 'anyof', 'SalesOrd:A'], 'and', ['trandate', 'within', 'thismonth']],
-                    columns: ['entity', 'trandate', 'tranid', 'salesrep', 'total', 'status']
+                let salesOrderSearch =search.create({
+                    type: search.Type.TRANSACTION,
+                    filters: [['mainline', 'is', 'T'], 'and', 
+                            ['status', 'anyof', ['CashSale:B', 'CashSale:C', 'CustInvc:A', 'CustInvc:B'], 'and', 
+                            ['trandate', 'within', 'thismonth']]],
+                    columns: []
                 });
-
-                return salesOrderSearch;
             }
             catch(e)
             {
                 log.debug({
-                    title: 'Error in processing Input Data',
+                    title: 'Error in Execution',
                     details: e.message
                 });
             }
 
         }
-
 
         /**
          * Defines the function that is executed when the map entry point is triggered. This entry point is triggered automatically
@@ -62,63 +62,6 @@ define(['N/email', 'N/record', 'N/search'],
          */
 
         const map = (mapContext) => {
-            try
-            {
-                let searchResult = JSON.parse(mapContext.value);
-                let id = searchResult.id;
-                let salesRep = searchResult.values.salesrep.value;
-                let customerName = searchResult.values.entity.value;
-                let docNumber = searchResult.values.tranid;
-                let amount = searchResult.values.total;
-                log.debug(`ID: ${id} Rep ${salesRep} Customer ${customerName} Documet ${docNumber} Amount ${amount}`);
-
-                record.submitFields({
-                    type: record.Type.SALES_ORDER,
-                    id: id,
-                    values: {orderstatus: 'B'} 
-                });
-                log.debug('Sales order status changed');
-
-                let adminSearch = search.create({
-                    type: search.Type.EMPLOYEE,
-                    filters: ['role', 'anyof', 3],
-                    columns: ['internalid']
-                });
-
-                let author = '';
-                adminSearch.run().each(function(result){
-                    author = result.getValue('internalid');
-                });
-
-                if(salesRep)
-                {
-                    email.send({
-                        author: author,
-                        body: `Sales Order status have been updated to Pending Fulfilment for 
-                                        Customer: ${customerName} with Document Number: ${docNumber}`,
-                        recipients: salesRep,
-                        subject: 'Sales Order Status Updated'
-                    });
-                    log.debug('Mail send to: '+salesRep);
-                }
-                else
-                {
-                    email.send({
-                        author: author,
-                        body: `Customer: ${customerName} does not have salesrep. Update salesrep for the customer`,
-                        recipients: 849,
-                        subject: 'Customer with no sales rep found'
-                    });
-                    log.debug('Mail send to Admin');
-                }
-            }
-            catch(e)
-            {
-                log.debug({
-                    title: 'Error in processing map reduce',
-                    details: e.message
-                });
-            }
 
         }
 
@@ -139,6 +82,57 @@ define(['N/email', 'N/record', 'N/search'],
          */
         const reduce = (reduceContext) => {
 
+            var csvContent = 'Customer Name,Customer Email,Sales Order Document Number,Sales Amount\n';
+            context.values.forEach(function (value) {
+                var data = JSON.parse(value);
+                csvContent += data.customerName + ',' + data.customerEmail + ',' + data.salesOrderId + ',' + data.salesAmount + '\n';
+            });
+        
+            // Create CSV file
+            var fileObj = file.create({
+                name: 'monthly_sales_report.csv',
+                fileType: file.Type.CSV,
+                contents: csvContent
+            });
+        
+            // Send email with the CSV file attached
+            email.send({
+                author: -5, // NetSuite system user
+                recipients: salesRepEmail,
+                subject: 'Monthly Sales Report',
+                body: salesRepId === 'ADMIN' 
+                      ? 'Please assign a sales representative for the listed customers:\n\n' + csvContent 
+                      : 'Please find your monthly sales report attached.',
+                attachments: [fileObj]
+            });
+
+/*
+            let csvFile = file.create({
+                name: 'sales_data.csv',
+                contents: 'date,amount\n',
+                fileType: 'CSV'
+            });
+ 
+            csvFile.appendLine({
+                value: salesRepId
+            });
+            csvFile.appendLine({
+                value: entityName
+            });
+            csvFile.appendLine({
+                value: email
+            });
+            csvFile.appendLine({
+                value: docno
+            });
+            csvFile.appendLine({
+                value: amount
+            });
+       
+            let csvFileId = csvFile.save();
+ 
+            log.debug("Contents of csv file are",csvFileId);
+*/
         }
 
 
