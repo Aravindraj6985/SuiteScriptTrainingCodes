@@ -53,45 +53,55 @@ function(record, search) {
     {
         try
         {
-            console.log('Triggered')
-            if(field === 'custpage_jj_itemselect')
+            if(field === 'custpage_jj_itemselect' || field === 'custpage_jj_itemquantity')
             {
-                console.log('Field Change triggered insode loop')
                 let itemId = record.getCurrentSublistValue({
                     sublistId: 'custpage_jj_itemsublist',
                     fieldId: 'custpage_jj_itemselect'
                 });
 
-                console.log('Item ID: '+itemId);
+                let qty = record.getCurrentSublistValue({
+                    sublistId: 'custpage_jj_itemsublist',
+                    fieldId: 'custpage_jj_itemquantity'
+                });
 
                 let itemSearch = search.create({
                     type: search.Type.ITEM,
-                    filters: ['internalid', 'is', itemId],
-                    coloums: ['salesde']
+                    filters: [['internalid', 'is', itemId]],
+                    columns: ['itemid', 'salesdescription','baseprice']
+                });
+                
+                let itemName = '';
+                let itemDescription ='';
+                let bprice = ''
+                itemSearch.run().each(function(result) {
+                    itemName =result.getValue('itemid');
+                    itemDescription = result.getValue('salesdescription');
+                    bprice = result.getValue('baseprice');
                 });
 
-                itemSearch.lookupFields({
-                    type: enum,
-                    id: string,
-                    columns: string | string[]
-                })
-                // let itemRecord = record.load({
-                //     type: record.Type.INVENTORY_ITEM,
-                //     id: itemId
-                // });
-console.log('HI')
-                let description = itemRecord.getValue('salesdescription');
-                console.log(description);
-                
-                
+                record.setCurrentSublistValue({
+                    sublistId: 'custpage_jj_itemsublist',
+                    fieldId: 'custpage_jj_itemdescription',
+                    value: itemDescription
+                });
+
+                record.setCurrentSublistValue({
+                    sublistId: 'custpage_jj_itemsublist',
+                    fieldId: 'custpage_jj_itemprice',
+                    value: bprice
+                });
+
+                record.setCurrentSublistValue({
+                    sublistId: 'custpage_jj_itemsublist',
+                    fieldId: 'custpage_jj_itemamount',
+                    value: bprice*qty
+                });
             }
         }
         catch(e)
         {
-            log.debug({
-                title: 'Error in Autopopulating Item Elements',
-                details: any
-            })
+            console.log(e.message);
         }
         
     }
