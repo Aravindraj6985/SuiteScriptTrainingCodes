@@ -116,6 +116,7 @@ define(['N/email', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/url'],
                 let recId;
                 let custId;
                 let salesRep;
+                let admin = 849;
                 
                 let customSearch = search.create({
                     type: 'customrecord_jj_customer_reference_recor',
@@ -168,8 +169,7 @@ define(['N/email', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/url'],
 
                         log.debug('URL: '+urlLink);
 
-                        let custRecId = createRecord(cName, cEmail, cSubject, cMessage);
-                        log.debug('Custom Record Created. ID: '+custRecId);
+                        let custRecId = createRecord(cName, cEmail, cSubject, cMessage, admin);
 
                         record.submitFields({
                             type: 'customrecord_jj_customer_reference_recor',
@@ -178,14 +178,30 @@ define(['N/email', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/url'],
                         });
                         log.debug('URL Saved to Record. ID :'+custRecId);
 
-                        sentMail()
+                        if(salesRep)
+                        {
+                            sendMail(custRecId, salesRep);
+                            log.debug('Mail Send to Customer Sales Rep: '+salesRep);
+                        }
+                        else
+                        {
+                            log.debug('Sales Rep not found for Customer. ID: '+custId);
+                        }
+                        
                     }
                     else
                     {
-                        let custRecId = createRecord(cName, cEmail, cSubject, cMessage);
-                        log.debug('Custom Record Created. ID: '+custRecId);
+                        createRecord(cName, cEmail, cSubject, cMessage, admin);
                     }
                 }
+
+                let html = '<html><body>';
+                html += '<h1>Submitted Details</h1>';
+                html += '<p><strong>Name:</strong> ' + cName + '</p>';
+                html += '<p><strong>Email:</strong> ' + cEmail + '</p>';
+                html += '</body></html>';
+                scriptContext.response.write(html);
+                
             }
             catch(e)
             {
@@ -198,7 +214,7 @@ define(['N/email', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/url'],
             }
         }
 
-        function createRecord(cName, cEmail, cSubject, cMessage)
+        function createRecord(cName, cEmail, cSubject, cMessage, admin)
         {
             try
             {
@@ -212,6 +228,11 @@ define(['N/email', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/url'],
                 custRecord.setValue({fieldId: 'custrecord_jj_message', value: cMessage});
 
                 let custRecId = custRecord.save();
+                log.debug('Custom Record Created. ID: '+custRecId);
+
+                sendMail(custRecId, admin);
+                log.debug('Mail Send to NS Admin: '+admin);
+
                 return custRecId;
 
             }
@@ -219,6 +240,33 @@ define(['N/email', 'N/record', 'N/search', 'N/ui/serverWidget', 'N/url'],
             {
                 log.debug({
                     title: 'Error in Custom Record Creating',
+                    details: e.message
+                });
+            }
+        }
+
+        function sendMail(custRecId, receipient)
+        {
+            try
+            {
+                let custRecUrl = url.resolveRecord({
+                    recordId: custRecId,
+                    recordType: 'customrecord_jj_customer_reference_recor'
+                });
+
+                email.send({
+                    author: 33,
+                    body: 'A new record have been created in Customer Reference Record with ID: '+custRecId
+                    +'\n' +'Link of Customer Reference Record: '+custRecUrl,
+                    recipients: receipient,
+                    subject: 'New Customer Reference Record Created',
+                    relatedRecords: {customRecord: {id:custRecId, recordType:'customrecord_jj_customer_reference_recor'}}
+                });
+            }
+            catch(e)
+            {
+                log.debug({
+                    title: 'Error in Sending Mail',
                     details: e.message
                 });
             }
